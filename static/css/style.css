@@ -478,6 +478,53 @@ a { color: inherit; text-decoration: none; }
 .auth-switch a:hover { text-decoration: underline; }
 
 /* ------------------------------------------------------------------ */
+/* Terms page                                                          */
+/* ------------------------------------------------------------------ */
+
+.terms-section {
+    padding: 4rem 2rem;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.terms-inner {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 3rem;
+}
+
+.terms-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+}
+
+.terms-updated {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    margin-bottom: 2rem;
+}
+
+.terms-block { margin-bottom: 2rem; }
+
+.terms-block:last-child { margin-bottom: 0; }
+
+.terms-heading {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.75rem;
+}
+
+.terms-text {
+    font-size: 0.95rem;
+    color: var(--ink-muted);
+    line-height: 1.7;
+}
+
+/* ------------------------------------------------------------------ */
 /* Footer                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -504,6 +551,27 @@ a { color: inherit; text-decoration: none; }
 
 .footer-copy {
     font-size: 0.8rem;
+    color: var(--ink-faint);
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.footer-links a {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--paper);
+}
+
+.footer-divider {
     color: var(--ink-faint);
 }
 
