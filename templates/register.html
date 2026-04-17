@@ -13,11 +13,16 @@
         </div>
 
         <div class="auth-card">
-            {% if error %}
-            <div class="auth-error">{{ error }}</div>
-            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="auth-error auth-error--{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-            <form method="POST" action="/register">
+            <form method="POST" action="{{ url_for('register') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label for="name">Full name</label>
                     <input type="text" id="name" name="name"
@@ -33,7 +38,7 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password"
-                           class="form-input" placeholder="Min. 8 characters"
+                           class="form-input" placeholder="Min. 6 characters"
                            required>
                 </div>
                 <button type="submit" class="btn-submit">Create account</button>
