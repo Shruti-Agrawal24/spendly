@@ -3,9 +3,10 @@ import hmac
 import re
 import time
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 
-from database.db import get_db, init_db, seed_db, create_user
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-key-change-in-production"
@@ -116,8 +117,40 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        # Validate CSRF token
+        csrf_token = request.form.get("csrf_token", "")
+        if not validate_csrf_token(csrf_token):
+            flash("Invalid or expired session. Please try again.", "error")
+            return render_template("login.html")
+
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        # Validate required fields
+        if not email:
+            flash("Email is required", "error")
+            return render_template("login.html")
+
+        if not password:
+            flash("Password is required", "error")
+            return render_template("login.html")
+
+        # Fetch user by email
+        user = get_user_by_email(email)
+
+        # Verify password
+        if not user or not check_password_hash(user["password_hash"], password):
+            flash("Invalid credentials", "error")
+            return render_template("login.html")
+
+        # Successful login - store user_id in session
+        session["user_id"] = user["id"]
+        flash("Welcome back!", "success")
+        return redirect(url_for("landing"))
+
     return render_template("login.html")
 
 
@@ -137,7 +170,9 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    flash("Logged out successfully", "success")
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
