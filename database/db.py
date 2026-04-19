@@ -91,6 +91,22 @@ def get_user_by_email(email):
     return user
 
 
+def get_user_by_id(user_id):
+    """
+    Fetch a user by ID.
+    Returns a dict-like row (sqlite3.Row) or None if not found.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, name, email FROM users WHERE id = ?",
+        (user_id,)
+    )
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+
 def seed_db():
     """
     Insert sample data for development.

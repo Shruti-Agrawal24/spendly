@@ -48,6 +48,17 @@ def inject_csrf():
     return dict(csrf_token=generate_csrf_token)
 
 
+@app.context_processor
+def inject_user():
+    """Make logged_in state and current user available in all templates."""
+    from database.db import get_user_by_id
+    user_id = session.get("user_id")
+    if user_id:
+        user = get_user_by_id(user_id)
+        return dict(logged_in=True, current_user=user)
+    return dict(logged_in=False, current_user=None)
+
+
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
