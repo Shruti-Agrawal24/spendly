@@ -70,6 +70,11 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    # Redirect if already logged in
+    if session.get("user_id"):
+        flash("Already logged in", "error")
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         # Validate CSRF token
         csrf_token = request.form.get("csrf_token", "")
@@ -130,6 +135,11 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Redirect if already logged in
+    if session.get("user_id"):
+        flash("Already logged in", "error")
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         # Validate CSRF token
         csrf_token = request.form.get("csrf_token", "")
