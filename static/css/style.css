@@ -726,3 +726,214 @@ a { color: inherit; text-decoration: none; }
     .nav-links a:not(.nav-cta) { display: none; }
     .hero { padding: 3rem 1rem 2rem; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Profile Page                                                        */
+/* ------------------------------------------------------------------ */
+
+.profile-container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.profile-section {
+    width: 100%;
+}
+
+.profile-user-card {
+    padding: 2rem;
+}
+
+.profile-user-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.profile-avatar-initials {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.profile-user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.profile-user-name {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    color: var(--ink);
+    margin: 0;
+}
+
+.profile-user-email {
+    font-size: 0.95rem;
+    color: var(--ink-muted);
+    margin: 0;
+}
+
+.profile-member-since {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    margin: 0;
+}
+
+.profile-section-card {
+    padding: 1.75rem;
+}
+
+.profile-section-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--ink);
+    margin: 0 0 1.25rem 0;
+}
+
+/* Transaction Table */
+.profile-transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.profile-transactions-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.profile-transactions-table td {
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.9rem;
+}
+
+.profile-transactions-table tr:last-child td {
+    border-bottom: none;
+}
+
+.profile-table-date {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.profile-table-description {
+    color: var(--ink-soft);
+}
+
+.profile-table-amount {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--ink);
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Category Badge */
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.category-badge--food {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.category-badge--transport {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.category-badge--bills {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.category-badge--health {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.category-badge--entertainment {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.category-badge--shopping {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.category-badge--other {
+    background: var(--border-soft);
+    color: var(--ink-muted);
+}
+
+/* Category Breakdown */
+.profile-category-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.profile-category-amount {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    color: var(--ink);
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .profile-container {
+        padding: 2rem 1rem;
+    }
+
+    .profile-user-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-user-details {
+        align-items: center;
+    }
+
+    .profile-transactions-table {
+        font-size: 0.8rem;
+    }
+
+    .profile-transactions-table th,
+    .profile-transactions-table td {
+        padding: 0.5rem 0.25rem;
+    }
+}
