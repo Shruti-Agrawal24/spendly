@@ -5,7 +5,7 @@ import time
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id, get_user_expenses, get_expense_summary, get_category_breakdown
 from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
@@ -48,6 +48,17 @@ def inject_csrf():
     return dict(csrf_token=generate_csrf_token)
 
 
+@app.context_processor
+def inject_user():
+    """Make logged_in state and current user available in all templates."""
+    from database.db import get_user_by_id
+    user_id = session.get("user_id")
+    if user_id:
+        user = get_user_by_id(user_id)
+        return dict(logged_in=True, current_user=user)
+    return dict(logged_in=False, current_user=None)
+
+
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
@@ -59,6 +70,11 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    # Redirect if already logged in
+    if session.get("user_id"):
+        flash("Already logged in", "error")
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         # Validate CSRF token
         csrf_token = request.form.get("csrf_token", "")
@@ -119,6 +135,11 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Redirect if already logged in
+    if session.get("user_id"):
+        flash("Already logged in", "error")
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         # Validate CSRF token
         csrf_token = request.form.get("csrf_token", "")
@@ -149,7 +170,7 @@ def login():
         # Successful login - store user_id in session
         session["user_id"] = user["id"]
         flash("Welcome back!", "success")
-        return redirect(url_for("landing"))
+        return redirect(url_for("profile"))
 
     return render_template("login.html")
 
@@ -177,7 +198,58 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    # Redirect if not logged in
+    if not session.get("user_id"):
+        flash("Please log in to access this page", "error")
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+    user = get_user_by_id(user_id)
+
+    # User info from database
+    user_info = {
+        "name": user["name"],
+        "email": user["email"],
+        "member_since": user["created_at"][:10] if user["created_at"] else "Recently"
+    }
+
+    # Expense summary from database
+    summary = get_expense_summary(user_id)
+    summary_stats = {
+        "total_spent": f"₹{summary['total_spent']:,.2f}" if summary['total_spent'] else "₹0.00",
+        "transaction_count": str(summary['transaction_count']),
+        "top_category": summary['top_category']
+    }
+
+    # Recent transactions from database
+    expenses = get_user_expenses(user_id, limit=10)
+    transactions = []
+    for exp in expenses:
+        transactions.append({
+            "date": exp["date"][:10] if exp["date"] else "",
+            "description": exp["description"] or exp["category"],
+            "category": exp["category"],
+            "category_class": exp["category"].lower(),
+            "amount": f"₹{exp['amount']:.2f}"
+        })
+
+    # Category breakdown from database
+    breakdown = get_category_breakdown(user_id)
+    category_breakdown = []
+    for cat in breakdown:
+        category_breakdown.append({
+            "name": cat["name"],
+            "amount": f"₹{cat['amount']:.2f}",
+            "percentage": cat["percentage"]
+        })
+
+    return render_template(
+        "profile.html",
+        user_info=user_info,
+        summary_stats=summary_stats,
+        transactions=transactions,
+        category_breakdown=category_breakdown
+    )
 
 
 @app.route("/expenses/add")
