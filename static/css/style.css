@@ -303,8 +303,13 @@ a { color: inherit; text-decoration: none; }
     transition: width 0.6s ease;
 }
 
-.mock-bar-2 { background: #f97316; }
-.mock-bar-3 { background: #8b5cf6; }
+.mock-bar--food { background: var(--accent); }
+.mock-bar--transport { background: #3b82f6; }
+.mock-bar--bills { background: #f59e0b; }
+.mock-bar--health { background: #ec4899; }
+.mock-bar--entertainment { background: #8b5cf6; }
+.mock-bar--shopping { background: #f97316; }
+.mock-bar--other { background: var(--ink-faint); }
 
 /* ------------------------------------------------------------------ */
 /* Buttons                                                             */
