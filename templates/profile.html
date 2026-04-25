@@ -87,7 +87,7 @@
                 <div class="mock-bar-row">
                     <span class="mock-cat">{{ category.name }}</span>
                     <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar--{{ category.name | lower }}" style="width: {{ category.percentage }}%"></div>
+                        <div class="mock-bar {{ 'mock-bar--' ~ category.name | lower }}" style="width: {{ category.percentage }}%"></div>
                     </div>
                     <span class="profile-category-amount">{{ category.amount }}</span>
                 </div>
