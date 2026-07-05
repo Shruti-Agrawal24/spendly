@@ -201,8 +201,7 @@
             <p class="empty-state">No transactions yet. Start tracking your expenses!</p>
             {% endif %}
             <div class="dashboard-tx-foot">
-                {# TODO: full transactions page not implemented yet. #}
-                <a href="#" class="dashboard-tx-viewall" title="Coming soon">View All →</a>
+                <a href="{{ url_for('transactions') }}" class="dashboard-tx-viewall">View All →</a>
             </div>
         </div>
     </section>

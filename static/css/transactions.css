@@ -1,0 +1,565 @@
+/* ------------------------------------------------------------------ */
+/* Transactions page                                                    */
+/* Reuses global + dashboard classes from style.css / dashboard.css    */
+/* This file owns only layout and page-specific tokens.                */
+/* ------------------------------------------------------------------ */
+
+.transactions-page {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+/* Allow cards on this page to stretch to the layout's full width */
+.transactions-page .mock-card {
+    max-width: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Navbar override — active / inactive link states                      */
+/* ------------------------------------------------------------------ */
+
+.nav-link--active {
+    color: var(--accent) !important;
+    font-weight: 600;
+}
+
+.nav-link--inactive {
+    color: var(--ink-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Page Header                                                          */
+/* ------------------------------------------------------------------ */
+
+.transactions-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.transactions-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+}
+
+.transactions-subtitle {
+    font-size: 1rem;
+    color: var(--ink-muted);
+    margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Filter card                                                          */
+/* ------------------------------------------------------------------ */
+
+.transactions-filters {
+    padding: 1.75rem;
+}
+
+.transactions-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) auto;
+    gap: 1rem 1.25rem;
+    align-items: end;
+}
+
+.transactions-form-group {
+    margin-bottom: 0;    /* override default .form-group margin */
+}
+
+.transactions-filters-actions {
+    display: flex;
+    align-items: flex-end;
+}
+
+.transactions-filters-actions .btn-ghost {
+    white-space: nowrap;
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+/* ------------------------------------------------------------------ */
+/* Summary cards — 4-up grid                                            */
+/* ------------------------------------------------------------------ */
+
+.transactions-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+}
+
+.transactions-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: var(--radius-md);
+    transition: box-shadow 0.2s;
+}
+
+.transactions-summary-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+
+.transactions-summary-label {
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.transactions-summary-value {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: var(--ink);
+    line-height: 1.15;
+    transition: color 0.2s;
+}
+
+.transactions-summary-value--income {
+    color: var(--accent);
+}
+
+.transactions-summary-value--negative {
+    color: var(--danger);
+}
+
+.transactions-summary-sub {
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    margin-top: 0.1rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Analytics — redesigned 2-column full-width layout                   */
+/* ------------------------------------------------------------------ */
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* Shared card shell */
+.analytics-card {
+    padding: 1.75rem 2rem 2rem;
+    max-width: 100%;
+}
+
+.analytics-card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 1.5rem 0;
+}
+
+/* ---- LEFT CARD: Pie + Breakdown ---- */
+
+.analytics-cat-body {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+/* Pie chart */
+.analytics-pie-wrap {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.analytics-pie {
+    width: 180px;
+    height: 180px;
+    display: block;
+}
+
+/* Horizontal-bar breakdown list */
+.analytics-breakdown {
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    justify-content: center;
+    min-width: 0;
+}
+
+.analytics-breakdown-row {
+    display: grid;
+    grid-template-columns: 10px 90px 1fr 36px 80px;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+}
+
+.analytics-breakdown-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.analytics-breakdown-name {
+    color: var(--ink-soft);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.analytics-breakdown-track {
+    height: 6px;
+    background: var(--border-soft);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.analytics-breakdown-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.analytics-breakdown-pct {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.analytics-breakdown-amt {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    color: var(--ink);
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ---- RIGHT CARD: Line Chart ---- */
+
+.analytics-line-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.analytics-line-summary {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.analytics-line-summary-label {
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin: 0 0 0.2rem;
+}
+
+.analytics-line-summary-value {
+    font-family: var(--font-display);
+    font-size: 1.85rem;
+    color: var(--ink);
+    line-height: 1.1;
+    margin: 0;
+}
+
+.analytics-line-summary-sub {
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0.2rem 0 0;
+}
+
+/* SVG wrapper — fixed height, full width */
+.analytics-line-wrap {
+    width: 100%;
+    position: relative;
+    height: 220px;
+}
+
+.analytics-line-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 960px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analytics-cat-body {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .analytics-breakdown {
+        width: 100%;
+    }
+
+    .analytics-breakdown-row {
+        grid-template-columns: 10px 80px 1fr 32px 70px;
+    }
+}
+
+@media (max-width: 600px) {
+    .analytics-card {
+        padding: 1.25rem 1.25rem 1.5rem;
+    }
+
+    .analytics-breakdown-row {
+        grid-template-columns: 10px 70px 1fr 28px;
+        font-size: 0.78rem;
+    }
+
+    /* Hide amount on very small screens */
+    .analytics-breakdown-amt {
+        display: none;
+    }
+
+    .analytics-line-wrap {
+        height: 180px;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Table toolbar                                                         */
+/* ------------------------------------------------------------------ */
+
+.transactions-table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.transactions-table-toolbar .form-input {
+    max-width: 280px;
+}
+
+.transactions-table-count {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    margin-left: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Table                                                                */
+/* ------------------------------------------------------------------ */
+
+.transactions-table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+}
+
+/* Inherits .profile-transactions-table for core table styles */
+.transactions-table {
+    min-width: 640px;
+}
+
+/* Sortable column headers */
+.transactions-th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+}
+
+.transactions-th:hover {
+    color: var(--ink);
+}
+
+.transactions-sort-ind {
+    opacity: 0.35;
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+    display: inline-block;
+    min-width: 0.7em;
+    transition: opacity 0.15s;
+}
+
+.transactions-th--sorted-asc   .transactions-sort-ind,
+.transactions-th--sorted-desc  .transactions-sort-ind {
+    opacity: 1;
+    color: var(--accent);
+}
+
+.transactions-th--amount {
+    text-align: right;
+}
+
+/* Type pill */
+.transactions-type {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.transactions-type--expense {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.transactions-type--income {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+/* Income amount colour */
+.transactions-amount--income {
+    color: var(--accent) !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Pagination                                                           */
+/* ------------------------------------------------------------------ */
+
+.transactions-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-soft);
+}
+
+.transactions-pagination .btn-ghost {
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+}
+
+.transactions-pagination-info {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+.transactions-pagination button:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: default;
+}
+
+/* ------------------------------------------------------------------ */
+/* Empty state                                                          */
+/* ------------------------------------------------------------------ */
+
+.transactions-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem 3rem;
+    gap: 1rem;
+    text-align: center;
+}
+
+.transactions-empty-icon {
+    opacity: 0.65;
+}
+
+.transactions-empty-text {
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                           */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1100px) {
+    .transactions-filters-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .transactions-filters-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 1000px) {
+    .transactions-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .transactions-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .transactions-filters-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .transactions-page {
+        padding: 2rem 1rem 3rem;
+        gap: 2rem;
+    }
+
+    .transactions-filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .transactions-filters-actions {
+        grid-column: 1;
+    }
+
+    .transactions-summary-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .transactions-table-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .transactions-table-toolbar .form-input {
+        max-width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .transactions-table-count {
+        margin-left: 0;
+    }
+
+    .transactions-pagination {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* Keep only the active nav link on very small screens */
+    .nav-link--inactive {
+        display: none;
+    }
+}

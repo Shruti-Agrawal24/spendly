@@ -393,6 +393,19 @@ def dashboard():
     )
 
 
+@app.route("/transactions")
+def transactions():
+    # Auth gate — Transactions requires a logged-in session.
+    if not session.get("user_id"):
+        flash("Please log in to access this page", "error")
+        return redirect(url_for("login"))
+
+    # Data is currently rendered client-side from mock data in
+    # static/js/transactions.js.  A future step will pass real DB rows
+    # here as a JSON context variable for the JS to consume.
+    return render_template("transactions.html")
+
+
 @app.route("/expenses/add")
 def add_expense():
     return "Add expense — coming in Step 7"
