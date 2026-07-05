@@ -1,7 +1,15 @@
 import sqlite3
+from datetime import datetime, timedelta
+
 from werkzeug.security import generate_password_hash
 
 DB_NAME = "spendly.db"
+
+# Short month names used by the dashboard monthly-spending chart.
+_MONTH_LABELS = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
 
 
 def get_db():
@@ -212,6 +220,58 @@ def get_category_breakdown(user_id):
         })
 
     return breakdown
+
+
+def get_monthly_spending(user_id, months=6):
+    """
+    Get total spending per month for the last N months (including the current one),
+    oldest to newest. Months with no expenses are returned as zero so the chart
+    always has the full window.
+
+    Returns a list of dicts: [{"label": "Jan", "amount": 1234.5}, ...]
+    """
+    today = datetime.now()
+    # Start of the first month in the window. We compute year/month pairs and
+    # normalize by going through each calendar month, then backfill totals.
+    months_indexed = []  # list of (year, month_index_0based)
+    cursor_year, cursor_month = today.year, today.month
+    for _ in range(months):
+        months_indexed.append((cursor_year, cursor_month))
+        cursor_month -= 1
+        if cursor_month == 0:
+            cursor_month = 12
+            cursor_year -= 1
+    months_indexed.reverse()  # oldest -> newest
+
+    first_year, first_month = months_indexed[0]
+    # First day of the first month in the window, formatted as YYYY-MM-DD.
+    cutoff = f"{first_year:04d}-{first_month:02d}-01"
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT strftime('%Y-%m', date) AS ym, SUM(amount) AS total
+        FROM expenses
+        WHERE user_id = ? AND date >= ?
+        GROUP BY ym
+        ORDER BY ym
+        """,
+        (user_id, cutoff)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    totals = {row["ym"]: row["total"] or 0 for row in rows}
+
+    result = []
+    for year, month in months_indexed:
+        key = f"{year:04d}-{month:02d}"
+        result.append({
+            "label": _MONTH_LABELS[month - 1],
+            "amount": float(totals.get(key, 0)),
+        })
+    return result
 
 
 def seed_db():

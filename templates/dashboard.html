@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Spendly{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar">
+    <div class="nav-inner">
+        <a href="{{ url_for('landing') }}" class="nav-brand">
+            <span class="brand-icon">◈</span>
+            <span class="brand-name">Spendly</span>
+        </a>
+        <div class="nav-links">
+            {% if logged_in %}
+                <a href="#" class="nav-link dashboard-bell" title="Notifications" aria-label="Notifications">🔔</a>
+                <a href="{{ url_for('profile') }}" class="nav-link" title="View profile">👤</a>
+                <span class="nav-greeting">{{ current_user.name }}</span>
+                <a href="{{ url_for('logout') }}" class="nav-cta">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Sign in</a>
+                <a href="{{ url_for('register') }}" class="nav-cta">Get started</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-container">
+
+    <!-- Greeting -->
+    <section class="dashboard-greeting">
+        <h1 class="dashboard-greeting-title">{{ greeting }}, {{ user.name }} 👋</h1>
+        <p class="dashboard-greeting-sub">Here's your financial summary.</p>
+        <div class="dashboard-greeting-user">
+            <div class="profile-avatar profile-avatar--sm">
+                <span class="profile-avatar-initials">{{ initials }}</span>
+            </div>
+            <div class="dashboard-greeting-meta">
+                <span class="dashboard-greeting-name">{{ user.name }}</span>
+                <span class="dashboard-greeting-email">{{ user.email }}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hero summary -->
+    <section class="dashboard-section">
+        <div class="mock-card dashboard-hero">
+            <div class="mock-card-header">
+                <span class="mock-dots">
+                    <span class="mock-dot"></span>
+                    <span class="mock-dot"></span>
+                    <span class="mock-dot"></span>
+                </span>
+                <span class="mock-title">Financial Summary</span>
+            </div>
+            <div class="mock-stats">
+                <div class="mock-stat">
+                    <span class="mock-stat-label">Current Balance</span>
+                    <span class="mock-stat-value">₹{{ "{:,.2f}".format(balance) }}</span>
+                    <span class="mock-stat-change">Income − Expenses</span>
+                </div>
+                <div class="mock-stat">
+                    <span class="mock-stat-label">Total Income</span>
+                    <span class="mock-stat-value">₹{{ "{:,.2f}".format(total_income) }}</span>
+                    <span class="mock-stat-change">All time</span>
+                </div>
+                <div class="mock-stat">
+                    <span class="mock-stat-label">Total Expenses</span>
+                    <span class="mock-stat-value">₹{{ "{:,.2f}".format(total_expenses) }}</span>
+                    <span class="mock-stat-change">All time</span>
+                </div>
+            </div>
+            <div class="dashboard-hero-actions">
+                <a href="{{ url_for('add_expense') }}" class="btn-primary">+ Add Expense</a>
+                {# TODO: route add_income doesn't exist yet — links to add_expense for now. #}
+                <a href="{{ url_for('add_expense') }}" class="btn-ghost" title="Income tracking coming soon">+ Add Income</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Preview -->
+    <section class="dashboard-section">
+        <div class="auth-card dashboard-ai-card dashboard-ai-preview">
+            <div class="dashboard-ai-head">
+                <span class="dashboard-ai-icon">💡</span>
+                <span class="dashboard-ai-title">Spendly AI</span>
+            </div>
+            <p class="dashboard-ai-body">
+                You spent less this week than last week. Cutting back on weekend
+                outings could save you an extra ₹800 by month end.
+            </p>
+            {# TODO: AI page not implemented yet. #}
+            <a href="#" class="btn-ghost dashboard-ai-cta" title="Coming soon">Read Full Analysis →</a>
+        </div>
+    </section>
+
+    <!-- Overall Analytics -->
+    <section class="dashboard-section">
+        <div class="dashboard-section-head">
+            <h2 class="dashboard-section-title">Overall Analytics</h2>
+            <span class="dashboard-section-sub">Lifetime breakdown</span>
+        </div>
+
+        <div class="dashboard-charts-grid">
+            <!-- Pie chart -->
+            <div class="mock-card">
+                <div class="mock-card-header">
+                    <span class="mock-dots">
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                    </span>
+                    <span class="mock-title">Spending by Category</span>
+                </div>
+                <div class="dashboard-pie-wrap">
+                    {% if pie_slices %}
+                    <svg class="dashboard-pie" viewBox="0 0 200 200" role="img" aria-label="Spending by category">
+                        {% for slice in pie_slices %}
+                        <path d="{{ slice.path_d }}" class="{{ slice.css_class }}">
+                            <title>{{ slice.label }} — {{ slice.percentage }}%</title>
+                        </path>
+                        {% endfor %}
+                    </svg>
+                    {% else %}
+                    <div class="dashboard-pie-empty">
+                        <svg class="dashboard-pie" viewBox="0 0 200 200" aria-hidden="true">
+                            <circle cx="100" cy="100" r="80" class="pie-slice-empty" />
+                        </svg>
+                        <span class="dashboard-pie-empty-label">No data yet</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <ul class="dashboard-pie-legend">
+                    {% for slice in pie_slices %}
+                    <li class="dashboard-pie-legend-item">
+                        <span class="dashboard-pie-swatch {{ slice.css_class }}"></span>
+                        <span class="dashboard-pie-label">{{ slice.label }}</span>
+                        <span class="dashboard-pie-pct">{{ slice.percentage }}%</span>
+                        <span class="dashboard-pie-amount">₹{{ "{:,.2f}".format(slice.amount) }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Monthly bar chart -->
+            <div class="mock-card">
+                <div class="mock-card-header">
+                    <span class="mock-dots">
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                    </span>
+                    <span class="mock-title">Monthly Spending</span>
+                </div>
+                <div class="dashboard-bars">
+                    {% for entry in monthly %}
+                    <div class="dashboard-bar-col">
+                        <span class="dashboard-bar-amount">₹{{ "{:,.0f}".format(entry.amount) }}</span>
+                        <div class="dashboard-bar-track">
+                            <div class="dashboard-bar" style="height: {{ entry.height_pct }}%"></div>
+                        </div>
+                        <span class="dashboard-bar-label">{{ entry.label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Transactions -->
+    <section class="dashboard-section">
+        <div class="mock-card">
+            <div class="mock-card-header">
+                <span class="mock-dots">
+                    <span class="mock-dot"></span>
+                    <span class="mock-dot"></span>
+                    <span class="mock-dot"></span>
+                </span>
+                <span class="mock-title">Recent Transactions</span>
+            </div>
+            {% if recent %}
+            <ul class="dashboard-tx-list">
+                {% for tx in recent %}
+                <li class="dashboard-tx-row">
+                    <span class="dashboard-tx-icon" aria-hidden="true">{{ category_icon(tx.category) }}</span>
+                    <div class="dashboard-tx-meta">
+                        <span class="dashboard-tx-name">{{ tx.name }}</span>
+                        <span class="category-badge category-badge--{{ tx.category_class }}">{{ tx.category }}</span>
+                    </div>
+                    <span class="dashboard-tx-date">{{ tx.date }}</span>
+                    <span class="dashboard-tx-amount">{{ tx.amount }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-state">No transactions yet. Start tracking your expenses!</p>
+            {% endif %}
+            <div class="dashboard-tx-foot">
+                {# TODO: full transactions page not implemented yet. #}
+                <a href="#" class="dashboard-tx-viewall" title="Coming soon">View All →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Insights -->
+    <section class="dashboard-section">
+        <div class="auth-card dashboard-ai-card dashboard-ai-insights">
+            <div class="dashboard-ai-head">
+                <span class="dashboard-ai-icon">✨</span>
+                <span class="dashboard-ai-title">Spendly AI Insights</span>
+            </div>
+            <ul class="dashboard-ai-list">
+                {% for insight in ai_insights %}
+                <li class="dashboard-ai-item">{{ insight }}</li>
+                {% endfor %}
+            </ul>
+            {# TODO: chatbot not implemented yet. #}
+            <a href="#" class="btn-primary dashboard-ai-cta" title="Coming soon">Ask Spendly AI →</a>
+        </div>
+    </section>
+
+</div>
+
+{% endblock %}
