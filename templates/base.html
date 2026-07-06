@@ -33,6 +33,16 @@
     </nav>
     {% endblock %}
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+            {% for category, message in messages %}
+            <div class="flash-banner flash-banner--{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
     <main class="main-content">
         {% block content %}{% endblock %}
     </main>

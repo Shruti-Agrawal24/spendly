@@ -56,6 +56,21 @@ def init_db():
         )
     ''')
 
+    # Create income table (mirrors expenses; kept separate so existing
+    # expense queries/helpers never need to filter by type)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS income (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            source TEXT NOT NULL,
+            date TEXT NOT NULL,
+            description TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
     # Create categories table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS categories (
@@ -171,20 +186,23 @@ def get_all_user_transactions(user_id):
     Fetch every transaction for a user (no limit), ordered by date descending.
 
     Each row is a dict with: id, amount, category, date, description, type.
-    The schema has no income table yet, so every row is currently 'expense'.
-    The 'type' field is included so the Transactions page (and any future
-    income step) can keep a single source of truth.
+    'type' is either 'expense' or 'income' so the Transactions page (and the
+    Dashboard recent list) can render a single combined, chronological feed.
     """
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT id, amount, category, date, description
+        SELECT id, amount, category, date, description, 'expense' AS type
         FROM expenses
+        WHERE user_id = ?
+        UNION ALL
+        SELECT id, amount, source AS category, date, description, 'income' AS type
+        FROM income
         WHERE user_id = ?
         ORDER BY date DESC, id DESC
         """,
-        (user_id,)
+        (user_id, user_id)
     )
     rows = cursor.fetchall()
     conn.close()
@@ -196,10 +214,122 @@ def get_all_user_transactions(user_id):
             "category": row["category"],
             "date": row["date"],
             "description": row["description"] or row["category"],
-            "type": "expense",
+            "type": row["type"],
         }
         for row in rows
     ]
+
+
+def create_expense(user_id, amount, category, date, description=None):
+    """
+    Insert a new expense for a user.
+    Returns the new expense's ID.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO expenses (user_id, amount, category, date, description)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (user_id, amount, category, date, description)
+    )
+    conn.commit()
+    expense_id = cursor.lastrowid
+    conn.close()
+    return expense_id
+
+
+def create_income(user_id, amount, source, date, description=None):
+    """
+    Insert a new income entry for a user.
+    Returns the new income row's ID.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO income (user_id, amount, source, date, description)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (user_id, amount, source, date, description)
+    )
+    conn.commit()
+    income_id = cursor.lastrowid
+    conn.close()
+    return income_id
+
+
+def get_income_summary(user_id):
+    """
+    Get summary statistics for a user's income.
+    Returns dict with total_income, entry_count.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT SUM(amount) as total, COUNT(*) as count FROM income WHERE user_id = ?",
+        (user_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return {
+        "total_income": row["total"] if row and row["total"] else 0,
+        "entry_count": row["count"] if row and row["count"] else 0,
+    }
+
+
+def get_user_categories(user_id):
+    """
+    Fetch all category names available to a user: the fixed global defaults
+    (user_id IS NULL) plus any categories that user has created themselves.
+    Returns a sorted list of unique names.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT DISTINCT name FROM categories
+        WHERE user_id IS NULL OR user_id = ?
+        ORDER BY name
+        """,
+        (user_id,)
+    )
+    names = [row["name"] for row in cursor.fetchall()]
+    conn.close()
+    return names
+
+
+def create_category(name, user_id):
+    """
+    Create a new user-specific category if it doesn't already exist
+    (case-insensitive match against that user's existing categories, plus
+    the global defaults). Returns the final category name to use — either
+    the newly created one or an existing match.
+    """
+    name = name.strip()
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT name FROM categories
+        WHERE (user_id IS NULL OR user_id = ?) AND LOWER(name) = LOWER(?)
+        """,
+        (user_id, name)
+    )
+    existing = cursor.fetchone()
+    if existing:
+        conn.close()
+        return existing["name"]
+
+    cursor.execute(
+        "INSERT INTO categories (name, user_id) VALUES (?, ?)",
+        (name, user_id)
+    )
+    conn.commit()
+    conn.close()
+    return name
 
 
 def get_expense_summary(user_id):

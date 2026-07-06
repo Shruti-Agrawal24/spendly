@@ -12,7 +12,9 @@ from database.db import (
     create_user, get_user_by_email, get_user_by_id,
     get_user_expenses, get_all_user_transactions,
     get_expense_summary, get_category_breakdown,
-    get_monthly_spending,
+    get_monthly_spending, get_income_summary,
+    create_expense, create_income, create_category,
+    get_user_categories,
 )
 from werkzeug.security import check_password_hash
 
@@ -345,22 +347,24 @@ def dashboard():
     else:
         initials = "??"
 
-    # Money totals. The schema has no income table yet, so total_income is
-    # hard-coded to 0.00 — the layout is forward-compatible with future income.
+    # Money totals — income and expenses now both come from real tables.
     summary = get_expense_summary(user_id)
-    total_income = 0.00
+    income_summary = get_income_summary(user_id)
+    total_income = income_summary["total_income"] or 0.00
     total_expenses = summary["total_spent"] or 0.00
     balance = total_income - total_expenses
 
-    # Recent transactions (top 5) — uses existing helper with a lower limit.
+    # Recent transactions (top 5) — combined income + expense feed.
     recent = []
-    for exp in get_user_expenses(user_id, limit=5):
+    for tx in get_all_user_transactions(user_id)[:5]:
+        sign = "+" if tx["type"] == "income" else "-"
         recent.append({
-            "name": exp["description"] or exp["category"],
-            "category": exp["category"],
-            "category_class": exp["category"].lower(),
-            "date": exp["date"][:10] if exp["date"] else "",
-            "amount": f"₹{exp['amount']:.2f}",
+            "name": tx["description"] or tx["category"],
+            "category": tx["category"],
+            "category_class": tx["category"].lower(),
+            "date": tx["date"][:10] if tx["date"] else "",
+            "amount": f"{sign}₹{tx['amount']:.2f}",
+            "type": tx["type"],
         })
 
     # Pie chart data (overall category breakdown) + monthly bar series.
@@ -391,6 +395,8 @@ def dashboard():
         pie_slices=pie_slices,
         monthly=monthly,
         ai_insights=ai_insights,
+        categories=get_user_categories(user_id),
+        today=datetime.now().strftime("%Y-%m-%d"),
     )
 
 
@@ -407,9 +413,91 @@ def transactions():
     return render_template("transactions.html", transactions_data=transactions_data)
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        flash("Please log in to access this page", "error")
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    csrf_token = request.form.get("csrf_token", "")
+    if not validate_csrf_token(csrf_token):
+        flash("Invalid or expired session. Please try again.", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    amount_raw = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    new_category = request.form.get("new_category", "").strip()
+    date = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip() or None
+
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        amount = None
+
+    if amount is None or amount <= 0:
+        flash("Please enter a valid amount greater than 0", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    # "+ Create New Category" takes priority over the dropdown selection.
+    if category == "__new__" or new_category:
+        if not new_category:
+            flash("Please enter a name for the new category", "error")
+            return redirect(request.referrer or url_for("dashboard"))
+        category = create_category(new_category, user_id)
+    elif not category:
+        flash("Please choose a category", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    if not date:
+        flash("Please choose a date", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    create_expense(user_id, amount, category, date, description)
+    flash("Expense added", "success")
+    return redirect(request.referrer or url_for("dashboard"))
+
+
+@app.route("/income/add", methods=["POST"])
+def add_income():
+    if not session.get("user_id"):
+        flash("Please log in to access this page", "error")
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    csrf_token = request.form.get("csrf_token", "")
+    if not validate_csrf_token(csrf_token):
+        flash("Invalid or expired session. Please try again.", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    amount_raw = request.form.get("amount", "").strip()
+    source = request.form.get("source", "").strip()
+    date = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip() or None
+
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        amount = None
+
+    if amount is None or amount <= 0:
+        flash("Please enter a valid amount greater than 0", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    if not source:
+        flash("Please enter a source for this income", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    if not date:
+        flash("Please choose a date", "error")
+        return redirect(request.referrer or url_for("dashboard"))
+
+    create_income(user_id, amount, source, date, description)
+    flash("Income added", "success")
+    return redirect(request.referrer or url_for("dashboard"))
 
 
 @app.route("/expenses/<int:id>/edit")

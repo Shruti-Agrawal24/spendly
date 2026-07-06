@@ -76,9 +76,8 @@
                 </div>
             </div>
             <div class="dashboard-hero-actions">
-                <a href="{{ url_for('add_expense') }}" class="btn-primary">+ Add Expense</a>
-                {# TODO: route add_income doesn't exist yet — links to add_expense for now. #}
-                <a href="{{ url_for('add_expense') }}" class="btn-ghost" title="Income tracking coming soon">+ Add Income</a>
+                <button type="button" class="btn-primary" data-open-modal="add-expense-modal">+ Add Expense</button>
+                <button type="button" class="btn-ghost" data-open-modal="add-income-modal">+ Add Income</button>
             </div>
         </div>
     </section>
@@ -225,4 +224,94 @@
 
 </div>
 
+<!-- Add Expense Modal -->
+<div class="modal-overlay" id="add-expense-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-expense-title">
+        <div class="modal-head">
+            <h3 class="modal-title" id="add-expense-title">Add Expense</h3>
+            <button type="button" class="modal-close" data-close-modal="add-expense-modal" aria-label="Close">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('add_expense') }}" class="modal-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label class="modal-field">
+                <span>Amount (₹)</span>
+                <input type="number" name="amount" step="0.01" min="0.01" required>
+            </label>
+
+            <label class="modal-field">
+                <span>Category</span>
+                <select name="category" id="expense-category-select">
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                    <option value="__new__">+ Create New Category</option>
+                </select>
+            </label>
+
+            <label class="modal-field" id="expense-new-category-field" hidden>
+                <span>New category name</span>
+                <input type="text" name="new_category" maxlength="40" placeholder="e.g. Subscriptions">
+            </label>
+
+            <label class="modal-field">
+                <span>Description</span>
+                <input type="text" name="description" maxlength="140" placeholder="Optional">
+            </label>
+
+            <label class="modal-field">
+                <span>Date</span>
+                <input type="date" name="date" value="{{ today }}" required>
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" data-close-modal="add-expense-modal">Cancel</button>
+                <button type="submit" class="btn-primary">Save Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Income Modal -->
+<div class="modal-overlay" id="add-income-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-income-title">
+        <div class="modal-head">
+            <h3 class="modal-title" id="add-income-title">Add Income</h3>
+            <button type="button" class="modal-close" data-close-modal="add-income-modal" aria-label="Close">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('add_income') }}" class="modal-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label class="modal-field">
+                <span>Amount (₹)</span>
+                <input type="number" name="amount" step="0.01" min="0.01" required>
+            </label>
+
+            <label class="modal-field">
+                <span>Source</span>
+                <input type="text" name="source" maxlength="60" placeholder="e.g. Salary, Freelance" required>
+            </label>
+
+            <label class="modal-field">
+                <span>Description</span>
+                <input type="text" name="description" maxlength="140" placeholder="Optional">
+            </label>
+
+            <label class="modal-field">
+                <span>Date</span>
+                <input type="date" name="date" value="{{ today }}" required>
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" data-close-modal="add-income-modal">Cancel</button>
+                <button type="submit" class="btn-primary">Save Income</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
