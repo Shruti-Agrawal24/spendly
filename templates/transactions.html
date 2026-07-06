@@ -167,12 +167,12 @@
     </section>
 
     {# ------------------------------------------------------------------ #}
-    {# 4. Analytics Section                                                 #}
+    {# 4. Expense Analytics Section                                        #}
     {# ------------------------------------------------------------------ #}
-    <section aria-label="Analytics">
+    <section aria-label="Expense analytics">
         <div class="dashboard-section-head" style="margin-bottom:1.25rem;">
-            <h2 class="dashboard-section-title">Analytics</h2>
-            <span class="dashboard-section-sub">Based on filtered data</span>
+            <h2 class="dashboard-section-title">Expense Analytics</h2>
+            <span class="dashboard-section-sub">Expenses only · Based on filtered data</span>
         </div>
 
         <div class="analytics-grid">
@@ -219,6 +219,67 @@
                          class="analytics-line-svg"
                          role="img"
                          aria-label="Spending over time line chart"
+                         preserveAspectRatio="none">
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    {# ------------------------------------------------------------------ #}
+    {# 4b. Income Analytics Section                                       #}
+    {# ------------------------------------------------------------------ #}
+    <section aria-label="Income analytics">
+        <div class="dashboard-section-head" style="margin-bottom:1.25rem;">
+            <h2 class="dashboard-section-title">Income Analytics</h2>
+            <span class="dashboard-section-sub">Income only · Based on filtered data</span>
+        </div>
+
+        <div class="analytics-grid">
+
+            {# ---- LEFT: Income by Source ---- #}
+            <div class="mock-card analytics-card">
+                <p class="analytics-card-title">Income by Source</p>
+
+                <div class="analytics-cat-body">
+                    {# Pie chart #}
+                    <div class="analytics-pie-wrap">
+                        <svg id="tx-pie-chart-income"
+                             class="analytics-pie"
+                             viewBox="0 0 200 200"
+                             role="img"
+                             aria-label="Income by source">
+                        </svg>
+                    </div>
+
+                    {# Horizontal progress-bar breakdown — populated by JS #}
+                    <ul id="tx-cat-breakdown-income" class="analytics-breakdown" aria-label="Income source breakdown">
+                    </ul>
+                </div>
+            </div>
+
+            {# ---- RIGHT: Income Over Time ---- #}
+            <div class="mock-card analytics-card">
+                <div class="analytics-line-header">
+                    <p class="analytics-card-title">Income Over Time</p>
+                </div>
+
+                {# Summary strip above the chart #}
+                <div class="analytics-line-summary">
+                    <div>
+                        <p class="analytics-line-summary-label">Total Earned</p>
+                        <p id="line-total-income" class="analytics-line-summary-value">₹0.00</p>
+                        <p id="line-total-sub-income" class="analytics-line-summary-sub"></p>
+                    </div>
+                </div>
+
+                {# SVG area line chart — rendered by JS #}
+                <div class="analytics-line-wrap">
+                    <svg id="tx-line-chart-income"
+                         class="analytics-line-svg"
+                         role="img"
+                         aria-label="Income over time line chart"
                          preserveAspectRatio="none">
                     </svg>
                 </div>

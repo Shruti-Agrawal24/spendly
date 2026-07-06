@@ -417,6 +417,47 @@ def get_category_breakdown(user_id):
     return breakdown
 
 
+def get_income_category_breakdown(user_id):
+    """
+    Get income breakdown by source for a user (the income-side mirror of
+    get_category_breakdown). Returns list of dicts with name, amount, percentage.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Get total income
+    cursor.execute(
+        "SELECT SUM(amount) as total FROM income WHERE user_id = ?",
+        (user_id,)
+    )
+    total = cursor.fetchone()["total"] or 0
+
+    # Get per-source totals
+    cursor.execute(
+        """
+        SELECT source, SUM(amount) as source_total
+        FROM income
+        WHERE user_id = ?
+        GROUP BY source
+        ORDER BY source_total DESC
+        """,
+        (user_id,)
+    )
+    sources = cursor.fetchall()
+    conn.close()
+
+    breakdown = []
+    for src in sources:
+        percentage = int((src["source_total"] / total * 100)) if total > 0 else 0
+        breakdown.append({
+            "name": src["source"],
+            "amount": src["source_total"],
+            "percentage": percentage
+        })
+
+    return breakdown
+
+
 def get_monthly_spending(user_id, months=6):
     """
     Get total spending per month for the last N months (including the current one),
@@ -448,6 +489,55 @@ def get_monthly_spending(user_id, months=6):
         """
         SELECT strftime('%Y-%m', date) AS ym, SUM(amount) AS total
         FROM expenses
+        WHERE user_id = ? AND date >= ?
+        GROUP BY ym
+        ORDER BY ym
+        """,
+        (user_id, cutoff)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    totals = {row["ym"]: row["total"] or 0 for row in rows}
+
+    result = []
+    for year, month in months_indexed:
+        key = f"{year:04d}-{month:02d}"
+        result.append({
+            "label": _MONTH_LABELS[month - 1],
+            "amount": float(totals.get(key, 0)),
+        })
+    return result
+
+
+def get_monthly_income(user_id, months=6):
+    """
+    Get total income per month for the last N months (the income-side mirror of
+    get_monthly_spending). Months with no income are returned as zero so the
+    chart always has the full window.
+
+    Returns a list of dicts: [{"label": "Jan", "amount": 1234.5}, ...]
+    """
+    today = datetime.now()
+    months_indexed = []  # list of (year, month_index_0based)
+    cursor_year, cursor_month = today.year, today.month
+    for _ in range(months):
+        months_indexed.append((cursor_year, cursor_month))
+        cursor_month -= 1
+        if cursor_month == 0:
+            cursor_month = 12
+            cursor_year -= 1
+    months_indexed.reverse()  # oldest -> newest
+
+    first_year, first_month = months_indexed[0]
+    cutoff = f"{first_year:04d}-{first_month:02d}-01"
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT strftime('%Y-%m', date) AS ym, SUM(amount) AS total
+        FROM income
         WHERE user_id = ? AND date >= ?
         GROUP BY ym
         ORDER BY ym

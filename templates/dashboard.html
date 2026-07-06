@@ -98,11 +98,11 @@
         </div>
     </section>
 
-    <!-- Overall Analytics -->
+    <!-- Expense Analytics -->
     <section class="dashboard-section">
         <div class="dashboard-section-head">
-            <h2 class="dashboard-section-title">Overall Analytics</h2>
-            <span class="dashboard-section-sub">Lifetime breakdown</span>
+            <h2 class="dashboard-section-title">Expense Analytics</h2>
+            <span class="dashboard-section-sub">Lifetime spending breakdown</span>
         </div>
 
         <div class="dashboard-charts-grid">
@@ -158,6 +158,79 @@
                 </div>
                 <div class="dashboard-bars">
                     {% for entry in monthly %}
+                    <div class="dashboard-bar-col">
+                        <span class="dashboard-bar-amount">₹{{ "{:,.0f}".format(entry.amount) }}</span>
+                        <div class="dashboard-bar-track">
+                            <div class="dashboard-bar" style="height: {{ entry.height_pct }}%"></div>
+                        </div>
+                        <span class="dashboard-bar-label">{{ entry.label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Income Analytics -->
+    <section class="dashboard-section">
+        <div class="dashboard-section-head">
+            <h2 class="dashboard-section-title">Income Analytics</h2>
+            <span class="dashboard-section-sub">Lifetime income breakdown</span>
+        </div>
+
+        <div class="dashboard-charts-grid">
+            <!-- Pie chart -->
+            <div class="mock-card">
+                <div class="mock-card-header">
+                    <span class="mock-dots">
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                    </span>
+                    <span class="mock-title">Income by Source</span>
+                </div>
+                <div class="dashboard-pie-wrap">
+                    {% if income_pie_slices %}
+                    <svg class="dashboard-pie" viewBox="0 0 200 200" role="img" aria-label="Income by source">
+                        {% for slice in income_pie_slices %}
+                        <path d="{{ slice.path_d }}" class="{{ slice.css_class }}">
+                            <title>{{ slice.label }} — {{ slice.percentage }}%</title>
+                        </path>
+                        {% endfor %}
+                    </svg>
+                    {% else %}
+                    <div class="dashboard-pie-empty">
+                        <svg class="dashboard-pie" viewBox="0 0 200 200" aria-hidden="true">
+                            <circle cx="100" cy="100" r="80" class="pie-slice-empty" />
+                        </svg>
+                        <span class="dashboard-pie-empty-label">No data yet</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <ul class="dashboard-pie-legend">
+                    {% for slice in income_pie_slices %}
+                    <li class="dashboard-pie-legend-item">
+                        <span class="dashboard-pie-swatch {{ slice.css_class }}"></span>
+                        <span class="dashboard-pie-label">{{ slice.label }}</span>
+                        <span class="dashboard-pie-pct">{{ slice.percentage }}%</span>
+                        <span class="dashboard-pie-amount">₹{{ "{:,.2f}".format(slice.amount) }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Monthly bar chart -->
+            <div class="mock-card">
+                <div class="mock-card-header">
+                    <span class="mock-dots">
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                        <span class="mock-dot"></span>
+                    </span>
+                    <span class="mock-title">Monthly Income</span>
+                </div>
+                <div class="dashboard-bars">
+                    {% for entry in monthly_income %}
                     <div class="dashboard-bar-col">
                         <span class="dashboard-bar-amount">₹{{ "{:,.0f}".format(entry.amount) }}</span>
                         <div class="dashboard-bar-track">

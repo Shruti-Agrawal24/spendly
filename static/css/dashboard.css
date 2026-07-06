@@ -240,6 +240,13 @@
 .pie-slice--other { fill: var(--ink-faint); }
 .pie-slice-empty { fill: var(--border-soft); }
 
+/* Income source slices — any class starting with `pie-slice--` that isn't a
+   known expense category gets the accent-2 (warm) tone. Covers arbitrary
+   user-typed source names like "Salary", "Freelance", etc. */
+path[class^="pie-slice--"]:not(.pie-slice--food):not(.pie-slice--transport):not(.pie-slice--bills):not(.pie-slice--health):not(.pie-slice--entertainment):not(.pie-slice--shopping):not(.pie-slice--other) {
+    fill: var(--accent-2);
+}
+
 .dashboard-pie-empty {
     position: relative;
     display: flex;
@@ -286,6 +293,11 @@
 .dashboard-pie-swatch.pie-slice--entertainment { background: #8b5cf6; }
 .dashboard-pie-swatch.pie-slice--shopping { background: #f97316; }
 .dashboard-pie-swatch.pie-slice--other { background: var(--ink-faint); }
+
+/* Income source legend swatches — same fallback as the pie paths above. */
+.dashboard-pie-swatch[class*="pie-slice--"]:not(.pie-slice--food):not(.pie-slice--transport):not(.pie-slice--bills):not(.pie-slice--health):not(.pie-slice--entertainment):not(.pie-slice--shopping):not(.pie-slice--other) {
+    background: var(--accent-2);
+}
 
 .dashboard-pie-label {
     color: var(--ink-soft);

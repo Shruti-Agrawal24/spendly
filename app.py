@@ -12,7 +12,9 @@ from database.db import (
     create_user, get_user_by_email, get_user_by_id,
     get_user_expenses, get_all_user_transactions,
     get_expense_summary, get_category_breakdown,
-    get_monthly_spending, get_income_summary,
+    get_income_category_breakdown,
+    get_monthly_spending, get_monthly_income,
+    get_income_summary,
     create_expense, create_income, create_category,
     get_user_categories,
 )
@@ -376,6 +378,15 @@ def dashboard():
     for entry in monthly:
         entry["height_pct"] = int(round((entry["amount"] / max_amount) * 100))
 
+    # Income analytics — lifetime breakdown by source + monthly income series.
+    income_breakdown = get_income_category_breakdown(user_id)
+    income_pie_slices = build_pie_slices(income_breakdown)
+
+    monthly_income = get_monthly_income(user_id, months=6)
+    max_amount_inc = max((m["amount"] for m in monthly_income), default=0) or 1
+    for entry in monthly_income:
+        entry["height_pct"] = int(round((entry["amount"] / max_amount_inc) * 100))
+
     # Static example insights for the v1 dashboard. Real computation comes later.
     top_category = summary.get("top_category") or "—"
     ai_insights = [
@@ -394,6 +405,8 @@ def dashboard():
         recent=recent,
         pie_slices=pie_slices,
         monthly=monthly,
+        income_pie_slices=income_pie_slices,
+        monthly_income=monthly_income,
         ai_insights=ai_insights,
         categories=get_user_categories(user_id),
         today=datetime.now().strftime("%Y-%m-%d"),

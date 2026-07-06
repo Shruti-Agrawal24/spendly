@@ -41,6 +41,17 @@ const CATEGORY_COLORS = {
   Other:         { fill: "#a0a0a0", bg: "#eeebe4", text: "#6b6b6b" },
 };
 
+// Income source palette — used by the Income Analytics section. Sources are
+// freeform text the user types, so we keep a small palette and fall back to
+// the warm accent for any source name that isn't pre-listed.
+const INCOME_SOURCE_COLORS = {
+  Salary:     { fill: "#c17f24", bg: "#fdf3e3", text: "#92580f" },
+  Freelance:  { fill: "#1a472a", bg: "#e8f0eb", text: "#1a472a" },
+  Bonus:      { fill: "#8b5cf6", bg: "#ede9fe", text: "#6d28d9" },
+  Investment: { fill: "#3b82f6", bg: "#dbeafe", text: "#1d4ed8" },
+};
+const INCOME_SOURCE_FALLBACK = { fill: "#c17f24", bg: "#fdf3e3", text: "#92580f" };
+
 const CATEGORY_ICONS = {
   Food:          "🍔",
   Transport:     "🚗",
@@ -94,12 +105,19 @@ const els = {
   summaryBalance:     $("summary-balance"),
   summaryCount:       $("summary-count"),
 
-  // Analytics — redesigned
+  // Analytics — Expense section
   pieChart:      $("tx-pie-chart"),
   catBreakdown:  $("tx-cat-breakdown"),
   lineChart:     $("tx-line-chart"),
   lineTotalSpent: $("line-total-spent"),
   lineTotalSub:   $("line-total-sub"),
+
+  // Analytics — Income section
+  pieChartIncome:     $("tx-pie-chart-income"),
+  catBreakdownIncome: $("tx-cat-breakdown-income"),
+  lineChartIncome:    $("tx-line-chart-income"),
+  lineTotalIncome:    $("line-total-income"),
+  lineTotalSubIncome: $("line-total-sub-income"),
 
   tableSearch:   $("table-search"),
   tableCount:    $("table-count"),
@@ -433,6 +451,212 @@ function updateLineChart(filtered) {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Income Analytics — mirrors updateCategoryCard/updateLineChart but    */
+/* operates on income-typed rows and writes to the income DOM nodes.    */
+/* ------------------------------------------------------------------ */
+
+function updateIncomeCategoryCard(filtered) {
+  const incomes = filtered.filter(t => t.type === "income");
+  const totalInc = incomes.reduce((s, t) => s + t.amount, 0);
+
+  const srcMap = {};
+  for (const tx of incomes) srcMap[tx.category] = (srcMap[tx.category] || 0) + tx.amount;
+  const sources = Object.entries(srcMap).sort((a, b) => b[1] - a[1]);
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  els.pieChartIncome.innerHTML = "";
+  els.catBreakdownIncome.innerHTML = "";
+
+  // ── Empty state ──
+  if (sources.length === 0) {
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("cx", 100); circle.setAttribute("cy", 100);
+    circle.setAttribute("r",  80);  circle.setAttribute("fill", "#eeebe4");
+    els.pieChartIncome.appendChild(circle);
+
+    const li = document.createElement("li");
+    li.style.cssText = "color:var(--ink-muted);font-size:0.85rem;padding:1rem 0;";
+    li.textContent = "No income data for selected filters.";
+    els.catBreakdownIncome.appendChild(li);
+    return;
+  }
+
+  // ── Pie slices ──
+  let cumDeg = 0;
+  for (const [name, amount] of sources) {
+    const span  = (amount / totalInc) * 360;
+    const color = (INCOME_SOURCE_COLORS[name] || INCOME_SOURCE_FALLBACK).fill;
+    const path  = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", arcPath(100, 100, 80, cumDeg, cumDeg + span));
+    path.setAttribute("fill", color);
+    const title = document.createElementNS(svgNS, "title");
+    title.textContent = `${name} — ${((amount / totalInc) * 100).toFixed(1)}%`;
+    path.appendChild(title);
+    els.pieChartIncome.appendChild(path);
+    cumDeg += span;
+  }
+
+  // ── Horizontal progress bars ──
+  const maxSrcAmt = sources[0][1]; // largest source for scaling bars
+
+  for (const [name, amount] of sources) {
+    const pct     = totalInc > 0 ? Math.round((amount / totalInc) * 100) : 0;
+    const barPct  = maxSrcAmt > 0 ? (amount / maxSrcAmt) * 100 : 0;
+    const color   = (INCOME_SOURCE_COLORS[name] || INCOME_SOURCE_FALLBACK).fill;
+    const pctText = pct === 0 ? "0%" : `${pct}%`;
+
+    const li = document.createElement("li");
+    li.className = "analytics-breakdown-row";
+
+    li.innerHTML = `
+      <span class="analytics-breakdown-dot" style="background:${color};"></span>
+      <span class="analytics-breakdown-name">${escapeHtml(name)}</span>
+      <div class="analytics-breakdown-track">
+        <div class="analytics-breakdown-fill" style="width:${barPct.toFixed(1)}%;background:${color};"></div>
+      </div>
+      <span class="analytics-breakdown-pct" style="color:${color};">${pctText}</span>
+      <span class="analytics-breakdown-amt">${fmt.currency(amount)}</span>
+    `;
+    els.catBreakdownIncome.appendChild(li);
+  }
+}
+
+function updateIncomeLineChart(filtered) {
+  const incomes = filtered.filter(t => t.type === "income");
+  const totalInc = incomes.reduce((s, t) => s + t.amount, 0);
+
+  // ── Total Earned summary ──
+  els.lineTotalIncome.textContent = fmt.currency(totalInc);
+  els.lineTotalSubIncome.textContent = totalInc > 0 ? "All filtered income" : "";
+
+  // ── Group by date (YYYY-MM-DD) ──
+  const dateMap = {};
+  for (const tx of incomes) {
+    dateMap[tx.date] = (dateMap[tx.date] || 0) + tx.amount;
+  }
+  const dates  = Object.keys(dateMap).sort();
+  const values = dates.map(d => dateMap[d]);
+
+  const svgEl = els.lineChartIncome;
+  svgEl.innerHTML = "";
+  const svgNS = "http://www.w3.org/2000/svg";
+
+  if (dates.length === 0) {
+    const t = document.createElementNS(svgNS, "text");
+    t.setAttribute("x", "50%"); t.setAttribute("y", "50%");
+    t.setAttribute("text-anchor", "middle"); t.setAttribute("dominant-baseline", "middle");
+    t.setAttribute("fill", "#a0a0a0"); t.setAttribute("font-size", "13");
+    t.textContent = "No income data for the selected filters.";
+    svgEl.appendChild(t);
+    return;
+  }
+
+  // ── Layout constants ──
+  const W = 600, H = 200;
+  const PAD = { top: 16, right: 20, bottom: 36, left: 52 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top  - PAD.bottom;
+  svgEl.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  const maxV  = Math.max(...values);
+  const niceMax = niceRound(maxV * 1.15);
+  const Y_TICKS = 4;
+
+  const xPos = i => PAD.left + (dates.length === 1 ? chartW / 2 : (i / (dates.length - 1)) * chartW);
+  const yPos = v => PAD.top  + chartH - (v / niceMax) * chartH;
+
+  // ── Y-axis grid lines + labels ──
+  for (let t = 0; t <= Y_TICKS; t++) {
+    const val = (niceMax / Y_TICKS) * t;
+    const y   = yPos(val);
+
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", PAD.left); line.setAttribute("x2", W - PAD.right);
+    line.setAttribute("y1", y);        line.setAttribute("y2", y);
+    line.setAttribute("stroke", t === 0 ? "#d0ccc6" : "#eeebe4");
+    line.setAttribute("stroke-width", t === 0 ? "1.5" : "1");
+    svgEl.appendChild(line);
+
+    if (t > 0) {
+      const lbl = document.createElementNS(svgNS, "text");
+      lbl.setAttribute("x", PAD.left - 6);
+      lbl.setAttribute("y", y + 4);
+      lbl.setAttribute("text-anchor", "end");
+      lbl.setAttribute("font-size", "10");
+      lbl.setAttribute("fill", "#a0a0a0");
+      lbl.textContent = fmtYLabel(val);
+      svgEl.appendChild(lbl);
+    }
+  }
+
+  // ── X-axis date labels (show ~5 evenly spaced) ──
+  const xLabelCount = Math.min(dates.length, 5);
+  for (let i = 0; i < xLabelCount; i++) {
+    const idx  = Math.round((i / (xLabelCount - 1 || 1)) * (dates.length - 1));
+    const x    = xPos(idx);
+    const lbl  = document.createElementNS(svgNS, "text");
+    lbl.setAttribute("x", x);
+    lbl.setAttribute("y", H - PAD.bottom + 14);
+    lbl.setAttribute("text-anchor", "middle");
+    lbl.setAttribute("font-size", "10");
+    lbl.setAttribute("fill", "#a0a0a0");
+    lbl.textContent = shortDate(dates[idx]);
+    svgEl.appendChild(lbl);
+  }
+
+  // ── Build point coordinates ──
+  const pts = dates.map((d, i) => [xPos(i), yPos(values[i])]);
+
+  // ── Filled area (gradient) — uses the income accent (--accent-2 = #c17f24) ──
+  const gradId = "line-area-grad-income";
+  const defs   = document.createElementNS(svgNS, "defs");
+  const grad   = document.createElementNS(svgNS, "linearGradient");
+  grad.setAttribute("id", gradId);
+  grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0");
+  grad.setAttribute("x2", "0"); grad.setAttribute("y2", "1");
+  const stop1 = document.createElementNS(svgNS, "stop");
+  stop1.setAttribute("offset", "0%");   stop1.setAttribute("stop-color", "#c17f24"); stop1.setAttribute("stop-opacity", "0.18");
+  const stop2 = document.createElementNS(svgNS, "stop");
+  stop2.setAttribute("offset", "100%"); stop2.setAttribute("stop-color", "#c17f24"); stop2.setAttribute("stop-opacity", "0");
+  grad.append(stop1, stop2);
+  defs.appendChild(grad);
+  svgEl.appendChild(defs);
+
+  const baseY = yPos(0);
+  const areaD = [
+    `M ${pts[0][0]} ${baseY}`,
+    ...pts.map(([x, y]) => `L ${x.toFixed(1)} ${y.toFixed(1)}`),
+    `L ${pts[pts.length-1][0]} ${baseY}`,
+    "Z"
+  ].join(" ");
+
+  const area = document.createElementNS(svgNS, "path");
+  area.setAttribute("d", areaD);
+  area.setAttribute("fill", `url(#${gradId})`);
+  svgEl.appendChild(area);
+
+  // ── Line ──
+  const lineD = pts.map(([x,y], i) => `${i===0?"M":"L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  const linePath = document.createElementNS(svgNS, "path");
+  linePath.setAttribute("d", lineD);
+  linePath.setAttribute("fill", "none");
+  linePath.setAttribute("stroke", "#c17f24");
+  linePath.setAttribute("stroke-width", "2");
+  linePath.setAttribute("stroke-linejoin", "round");
+  linePath.setAttribute("stroke-linecap",  "round");
+  svgEl.appendChild(linePath);
+
+  // ── Dot markers ──
+  for (const [x, y] of pts) {
+    const outer = document.createElementNS(svgNS, "circle");
+    outer.setAttribute("cx", x.toFixed(1)); outer.setAttribute("cy", y.toFixed(1));
+    outer.setAttribute("r", "4"); outer.setAttribute("fill", "#ffffff");
+    outer.setAttribute("stroke", "#c17f24"); outer.setAttribute("stroke-width", "2");
+    svgEl.appendChild(outer);
+  }
+}
+
 /* ---- Helpers for line chart ---- */
 
 function niceRound(v) {
@@ -556,6 +780,8 @@ function render() {
   updateSummary(filtered);
   updateCategoryCard(filtered);
   updateLineChart(filtered);
+  updateIncomeCategoryCard(filtered);
+  updateIncomeLineChart(filtered);
 
   // 3. Apply inline table search on top of filtered set
   const searched = applyTableSearch(filtered);
