@@ -56,8 +56,37 @@ def init_db():
         )
     ''')
 
+    # Create categories table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            user_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
+    # Create unique indexes to handle NULL and user-specific category uniqueness
+    cursor.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name_null_user 
+        ON categories(name) WHERE user_id IS NULL
+    ''')
+    cursor.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name_user 
+        ON categories(name, user_id) WHERE user_id IS NOT NULL
+    ''')
+
+    # Seed default categories
+    default_cats = ["Food", "Shopping", "Bills", "Transport", "Entertainment", "Health", "Education", "Travel", "Other"]
+    for cat in default_cats:
+        cursor.execute(
+            "INSERT OR IGNORE INTO categories (name, user_id) VALUES (?, NULL)",
+            (cat,)
+        )
+
     conn.commit()
     conn.close()
+
 
 
 def create_user(name, email, password):
@@ -135,6 +164,42 @@ def get_user_expenses(user_id, limit=10):
     expenses = cursor.fetchall()
     conn.close()
     return expenses
+
+
+def get_all_user_transactions(user_id):
+    """
+    Fetch every transaction for a user (no limit), ordered by date descending.
+
+    Each row is a dict with: id, amount, category, date, description, type.
+    The schema has no income table yet, so every row is currently 'expense'.
+    The 'type' field is included so the Transactions page (and any future
+    income step) can keep a single source of truth.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT id, amount, category, date, description
+        FROM expenses
+        WHERE user_id = ?
+        ORDER BY date DESC, id DESC
+        """,
+        (user_id,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            "id": row["id"],
+            "amount": float(row["amount"]),
+            "category": row["category"],
+            "date": row["date"],
+            "description": row["description"] or row["category"],
+            "type": "expense",
+        }
+        for row in rows
+    ]
 
 
 def get_expense_summary(user_id):

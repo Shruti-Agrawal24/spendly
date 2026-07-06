@@ -2,46 +2,30 @@
    transactions.js — Spendly Transactions Page
    All filtering, sorting, pagination, summary stats, pie chart,
    and bar chart live here. Uses only Vanilla JS, no libraries.
+
+   Transaction data comes from the same DB source the Dashboard uses.
+   The server injects the rows as a JSON <script> tag in transactions.html
+   (id="tx-data"); this file reads it once at init and feeds the rest
+   of the page from there.
    =================================================================== */
 
 "use strict";
 
 /* ------------------------------------------------------------------ */
-/* Mock data — replace with real API/template data in a future step    */
+/* Data source — populated from the #tx-data JSON in transactions.html */
 /* ------------------------------------------------------------------ */
 
-const MOCK_TRANSACTIONS = [
-  { id: 1,  date: "2026-04-01", description: "Lunch at cafe",          category: "Food",          type: "expense", amount: 45.50  },
-  { id: 2,  date: "2026-04-02", description: "Bus pass",               category: "Transport",     type: "expense", amount: 15.00  },
-  { id: 3,  date: "2026-04-03", description: "Electricity bill",       category: "Bills",         type: "expense", amount: 120.00 },
-  { id: 4,  date: "2026-04-05", description: "Pharmacy",               category: "Health",        type: "expense", amount: 35.00  },
-  { id: 5,  date: "2026-04-07", description: "Movie tickets",          category: "Entertainment", type: "expense", amount: 50.00  },
-  { id: 6,  date: "2026-04-08", description: "New shirt",              category: "Shopping",      type: "expense", amount: 89.99  },
-  { id: 7,  date: "2026-04-09", description: "Miscellaneous",          category: "Other",         type: "expense", amount: 25.00  },
-  { id: 8,  date: "2026-04-10", description: "Dinner with friends",    category: "Food",          type: "expense", amount: 65.00  },
-  { id: 9,  date: "2026-04-12", description: "Freelance payment",      category: "Other",         type: "income",  amount: 3500.00},
-  { id: 10, date: "2026-04-14", description: "Grocery run",            category: "Food",          type: "expense", amount: 430.00 },
-  { id: 11, date: "2026-04-15", description: "Cab to airport",         category: "Transport",     type: "expense", amount: 220.00 },
-  { id: 12, date: "2026-04-17", description: "Internet bill",          category: "Bills",         type: "expense", amount: 799.00 },
-  { id: 13, date: "2026-04-18", description: "Gym membership",         category: "Health",        type: "expense", amount: 1200.00},
-  { id: 14, date: "2026-04-20", description: "Concert tickets",        category: "Entertainment", type: "expense", amount: 250.00 },
-  { id: 15, date: "2026-04-21", description: "Shoes",                  category: "Shopping",      type: "expense", amount: 1499.00},
-  { id: 16, date: "2026-04-22", description: "Coffee",                 category: "Food",          type: "expense", amount: 85.00  },
-  { id: 17, date: "2026-04-23", description: "Side project income",    category: "Other",         type: "income",  amount: 5000.00},
-  { id: 18, date: "2026-04-24", description: "Auto rickshaw",          category: "Transport",     type: "expense", amount: 45.00  },
-  { id: 19, date: "2026-04-25", description: "Doctor visit",           category: "Health",        type: "expense", amount: 500.00 },
-  { id: 20, date: "2026-04-26", description: "Netflix subscription",   category: "Entertainment", type: "expense", amount: 649.00 },
-  { id: 21, date: "2026-04-27", description: "Laptop bag",             category: "Shopping",      type: "expense", amount: 1800.00},
-  { id: 22, date: "2026-04-28", description: "Home rent",              category: "Bills",         type: "expense", amount: 12000.00},
-  { id: 23, date: "2026-04-29", description: "Dinner takeaway",        category: "Food",          type: "expense", amount: 350.00 },
-  { id: 24, date: "2026-04-30", description: "Salary credit",          category: "Other",         type: "income",  amount: 45000.00},
-  { id: 25, date: "2026-05-01", description: "Water bill",             category: "Bills",         type: "expense", amount: 180.00 },
-  { id: 26, date: "2026-05-03", description: "Metro card recharge",    category: "Transport",     type: "expense", amount: 500.00 },
-  { id: 27, date: "2026-05-05", description: "Birthday dinner",        category: "Food",          type: "expense", amount: 1200.00},
-  { id: 28, date: "2026-05-07", description: "Vitamins",               category: "Health",        type: "expense", amount: 320.00 },
-  { id: 29, date: "2026-05-10", description: "Amazon order",           category: "Shopping",      type: "expense", amount: 740.00 },
-  { id: 30, date: "2026-05-12", description: "OTT bundle",             category: "Entertainment", type: "expense", amount: 499.00 },
-];
+const TRANSACTIONS = (() => {
+  const node = document.getElementById("tx-data");
+  if (!node) return [];
+  try {
+    const parsed = JSON.parse(node.textContent || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error("Failed to parse transaction data:", e);
+    return [];
+  }
+})();
 
 /* ------------------------------------------------------------------ */
 /* Category colour palette — mirrors dashboard.css tokens              */
@@ -566,7 +550,7 @@ function updateSortHeaders() {
 
 function render() {
   // 1. Apply top-level filters
-  const filtered = applyFilters(MOCK_TRANSACTIONS);
+  const filtered = applyFilters(TRANSACTIONS);
 
   // 2. Update summary, charts, and stats (always from filter-level data)
   updateSummary(filtered);
@@ -672,7 +656,7 @@ function bindPagination() {
   });
 
   els.btnNext.addEventListener("click", () => {
-    const filtered = applyFilters(MOCK_TRANSACTIONS);
+    const filtered = applyFilters(TRANSACTIONS);
     const searched = applyTableSearch(filtered);
     const pages    = Math.max(1, Math.ceil(searched.length / state.perPage));
     if (state.page < pages) { state.page++; render(); }

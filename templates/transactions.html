@@ -315,5 +315,8 @@
 {% endblock %}
 
 {% block scripts %}
+{# Real transactions for the logged-in user, injected from the same source
+   the Dashboard uses. Rendered as JSON for transactions.js to consume. #}
+<script id="tx-data" type="application/json">{{ transactions_data|tojson }}</script>
 <script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
 {% endblock %}

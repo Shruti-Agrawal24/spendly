@@ -10,7 +10,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from database.db import (
     get_db, init_db, seed_db,
     create_user, get_user_by_email, get_user_by_id,
-    get_user_expenses, get_expense_summary, get_category_breakdown,
+    get_user_expenses, get_all_user_transactions,
+    get_expense_summary, get_category_breakdown,
     get_monthly_spending,
 )
 from werkzeug.security import check_password_hash
@@ -400,10 +401,10 @@ def transactions():
         flash("Please log in to access this page", "error")
         return redirect(url_for("login"))
 
-    # Data is currently rendered client-side from mock data in
-    # static/js/transactions.js.  A future step will pass real DB rows
-    # here as a JSON context variable for the JS to consume.
-    return render_template("transactions.html")
+    user_id = session["user_id"]
+    # Same source the Dashboard reads from — no mock/demo data here.
+    transactions_data = get_all_user_transactions(user_id)
+    return render_template("transactions.html", transactions_data=transactions_data)
 
 
 @app.route("/expenses/add")
